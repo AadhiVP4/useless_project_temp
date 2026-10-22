@@ -1,0 +1,1188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Insta Conscience — Live Extension Preview</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --ig-grad: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+    --bg: #090a0f;
+    --surface: #11131f;
+    --card: #181b2c;
+    --card-hover: #22263d;
+    --border: rgba(255, 255, 255, 0.08);
+    --primary: #0a66c2;
+    --text: #f1f5f9;
+    --muted: #94a3b8;
+  }
+
+  body {
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 28px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .logo-pill {
+    background: var(--ig-grad);
+    color: #fff;
+    font-weight: 800;
+    font-size: 13px;
+    padding: 5px 12px;
+    border-radius: 20px;
+    letter-spacing: 0.5px;
+  }
+  header h1 { font-size: 16px; font-weight: 700; color: #fff; }
+  header p  { font-size: 12px; color: var(--muted); margin-left: auto; }
+
+  /* ── LAYOUT ── */
+  .layout {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    height: calc(100vh - 59px);
+  }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 20px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    overflow-y: auto;
+  }
+  .sidebar-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .btn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 14px;
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: inherit;
+    text-align: left;
+  }
+  .btn:hover {
+    background: var(--card-hover);
+    transform: translateY(-1px);
+  }
+  .btn.active {
+    background: rgba(225, 48, 108, 0.15);
+    border-color: rgba(225, 48, 108, 0.5);
+  }
+  .btn .icon { font-size: 20px; flex-shrink: 0; }
+  .btn .title { font-weight: 700; }
+  .btn .desc { font-size: 11px; color: var(--muted); margin-top: 2px; font-weight: 400; }
+
+  .sep { height: 1px; background: var(--border); margin: 4px 0; }
+
+  .phase-badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 10px;
+    font-weight: 700;
+    margin-left: auto;
+  }
+  .phase-1 { background: rgba(131, 58, 180, 0.25); color: #c084fc; border: 1px solid rgba(131, 58, 180, 0.4); }
+  .phase-2 { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .stat-block {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px;
+  }
+  .stat-block .label { font-size: 11px; color: var(--muted); margin-bottom: 4px; font-weight: 600; }
+  .stat-block .val   { font-size: 22px; font-weight: 800; color: #fff; }
+  .stat-block .sub   { font-size: 10px; color: var(--muted); margin-top: 2px; }
+  #stat-popups  { color: #f87171; }
+  #stat-interval { color: #38bdf8; }
+
+  .info-box {
+    background: rgba(10, 102, 194, 0.1);
+    border: 1px solid rgba(10, 102, 194, 0.3);
+    border-radius: 12px;
+    padding: 14px;
+    font-size: 12px;
+    color: #cbd5e1;
+    line-height: 1.6;
+  }
+  .info-box strong { color: #60a5fa; font-weight: 700; }
+
+  /* ── PREVIEW AREA ── */
+  .preview-area {
+    position: relative;
+    overflow: hidden;
+    background: #000;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .ig-chrome {
+    position: relative;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: #000;
+  }
+  .ig-topbar {
+    height: 48px;
+    background: #fff;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex; align-items: center; justify-content: center;
+    font-family: Georgia, serif;
+    font-style: italic;
+    font-size: 24px;
+    font-weight: 700;
+    color: #000;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 5;
+  }
+  .ig-badge-env {
+    position: absolute; right: 14px;
+    font-family: -apple-system, sans-serif;
+    font-style: normal;
+    font-size: 11px; font-weight: 700;
+    background: #f1f5f9; color: #475569;
+    padding: 3px 8px; border-radius: 6px;
+  }
+
+  .ig-body {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    background: #fafafa;
+  }
+
+  /* Scene 1: Login */
+  #scene-login {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    height: 100%;
+    gap: 14px;
+    padding: 24px;
+  }
+  .ig-box {
+    background: #fff;
+    border: 1px solid #dbdbdb;
+    border-radius: 8px;
+    padding: 36px 40px;
+    display: flex; flex-direction: column; align-items: center;
+    gap: 12px; width: 350px; max-width: 90%;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+  }
+  .ig-logo { font-size: 44px; font-family: Georgia, serif; font-style: italic; color: #000; margin-bottom: 8px; }
+  .ig-input {
+    width: 100%; padding: 10px 12px;
+    border: 1px solid #dbdbdb; border-radius: 6px;
+    background: #fafafa; font-size: 13px; color: #1e293b;
+    outline: none; transition: border-color 0.2s;
+  }
+  .ig-input:focus { border-color: #a8a8a8; background: #fff; }
+  .ig-login-btn {
+    width: 100%; padding: 10px;
+    background: #0095f6; color: #fff;
+    border: none; border-radius: 8px;
+    font-weight: 700; font-size: 14px; cursor: pointer;
+    margin-top: 4px;
+  }
+  .ig-hint {
+    font-size: 12px; color: #64748b; text-align: center;
+    background: #f8fafc; padding: 8px 12px; border-radius: 6px; border: 1px dashed #cbd5e1;
+  }
+
+  /* Scene 2: Reels */
+  #scene-reels {
+    display: none;
+    height: 100%;
+    background: #000;
+    position: relative;
+    overflow: hidden;
+  }
+  .reel-player {
+    position: absolute; inset: 0;
+    background: linear-gradient(180deg, #18092e 0%, #080314 100%);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    user-select: none;
+  }
+  .reel-icon { font-size: 84px; color: rgba(255,255,255,0.15); }
+  .reel-title { color: #fff; font-size: 16px; font-weight: 700; margin-top: 14px; }
+  .reel-sub { color: #94a3b8; font-size: 13px; margin-top: 4px; }
+  .reel-sidebar {
+    position: absolute; right: 16px; bottom: 80px;
+    display: flex; flex-direction: column; align-items: center; gap: 20px;
+    z-index: 2;
+  }
+  .reel-action { color: #fff; font-size: 26px; cursor: pointer; text-align: center; }
+  .reel-action span { font-size: 11px; display: block; margin-top: 2px; color: #e2e8f0; font-weight: 600; }
+
+  /* ── OVERLAYS & POPUPS ── */
+  /* Login Meme Popup */
+  #preview-login-popup {
+    display: none;
+    position: absolute; inset: 0;
+    background: rgba(0,0,0,0.65);
+    z-index: 50;
+    align-items: center; justify-content: center;
+    backdrop-filter: blur(4px);
+  }
+  #preview-login-popup.shown { display: flex; }
+  .preview-card {
+    position: relative;
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.95);
+    overflow: hidden;
+    max-height: 85vh;
+  }
+  .preview-card img { display: block; height: 60vh; width: auto; max-width: 85vw; object-fit: contain; }
+  .skip-btn {
+    position: absolute; bottom: 14px; left: 14px;
+    background: rgba(0,0,0,0.55); color: #ccc;
+    border: 1px solid #555; border-radius: 6px;
+    padding: 6px 14px; font-size: 13px; font-weight: 600; cursor: pointer;
+    transition: all 0.2s;
+  }
+  .skip-btn:hover { background: rgba(0,0,0,0.8); color: #fff; }
+
+  /* Reels Popups — Normal Size, Scattered */
+  .ic-reels-popup {
+    position: absolute;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 16px 60px rgba(0,0,0,0.85);
+    overflow: hidden;
+    animation: ic-drop-in 0.25s cubic-bezier(.22,.68,0,1.2) both;
+    pointer-events: auto;
+  }
+  .ic-reels-popup img {
+    display: block;
+    height: 240px;
+    width: auto;
+    max-width: 80vw;
+  }
+  .ic-reels-close {
+    position: absolute; top: 8px; right: 10px;
+    background: rgba(0,0,0,0.6); color: #fff;
+    border: none; border-radius: 50%;
+    width: 26px; height: 26px; font-size: 13px;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    z-index: 2; transition: background 0.2s;
+  }
+  .ic-reels-close:hover { background: #ef4444; }
+
+  @keyframes ic-drop-in {
+    from { transform: scale(0.6) translateY(-20px); opacity: 0; }
+    to   { transform: scale(1) translateY(0); opacity: 1; }
+  }
+  @keyframes ic-form-in {
+    from { transform: translateY(30px) scale(0.95); opacity: 0; }
+    to   { transform: translateY(0) scale(1); opacity: 1; }
+  }
+  @keyframes ic-pop {
+    0%   { transform: scale(0.85); opacity: 0; }
+    60%  { transform: scale(1.05); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  /* ── PURE HTML/CSS JOB APPLICATION FORM & TROLL INTERACTION ── */
+  #preview-job-form-overlay {
+    display: none;
+    position: absolute; inset: 0;
+    background: rgba(0, 0, 0, 0.9);
+    z-index: 200;
+    align-items: center; justify-content: center;
+    backdrop-filter: blur(8px);
+    padding: 16px;
+  }
+  #preview-job-form-overlay.shown { display: flex; }
+
+  #preview-job-form-card {
+    background: #ffffff;
+    border-radius: 20px;
+    padding: 30px 34px;
+    width: min(520px, 94%);
+    max-height: 92%;
+    overflow-y: auto;
+    box-shadow: 0 32px 100px rgba(0, 0, 0, 0.95);
+    animation: ic-form-in 0.45s cubic-bezier(.22, .68, 0, 1.2) both;
+    color: #1a1a2e;
+    position: relative;
+  }
+  #preview-job-form-card h2 {
+    font-size: 22px;
+    font-weight: 800;
+    color: #1a1a2e;
+    margin: 0 0 6px 0;
+    text-align: center;
+  }
+  #preview-job-form-card .ic-subtitle {
+    font-size: 13px;
+    color: #64748b;
+    margin: 0 0 18px 0;
+    text-align: center;
+  }
+  #preview-job-form-card .ic-field {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    margin-bottom: 12px;
+    text-align: left;
+  }
+  #preview-job-form-card label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  #preview-job-form-card input,
+  #preview-job-form-card select,
+  #preview-job-form-card textarea {
+    border: 1.5px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 9px 12px;
+    font-size: 13px;
+    color: #1a1a2e;
+    outline: none;
+    transition: border-color 0.2s;
+    font-family: inherit;
+    background: #f8fafc;
+    width: 100%;
+  }
+  #preview-job-form-card input:focus,
+  #preview-job-form-card select:focus,
+  #preview-job-form-card textarea:focus {
+    border-color: #0a66c2;
+    background: #fff;
+  }
+  #preview-job-form-card textarea {
+    resize: vertical;
+    min-height: 60px;
+  }
+  #preview-job-form-card .ic-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  #preview-job-form-card .ic-submit-btn {
+    width: 100%;
+    padding: 13px;
+    background: #0a66c2;
+    color: #ffffff;
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 8px;
+    transition: background 0.2s, transform 0.1s;
+    font-family: inherit;
+  }
+  #preview-job-form-card .ic-submit-btn:hover {
+    background: #004182;
+    transform: translateY(-1px);
+  }
+  #preview-job-form-card .ic-footer {
+    text-align: center;
+    font-size: 11px;
+    color: #94a3b8;
+    margin-top: 12px;
+  }
+
+  /* Interactive Troll Elements */
+  .ic-question-box {
+    animation: ic-pop 0.35s ease both;
+    text-align: center;
+    padding: 10px 0;
+  }
+  .ic-question-title {
+    font-size: 24px;
+    font-weight: 800;
+    color: #0f172a;
+    margin-bottom: 8px;
+  }
+  .ic-question-text {
+    font-size: 15px;
+    color: #475569;
+    margin-bottom: 20px;
+    line-height: 1.5;
+    font-weight: 500;
+  }
+  .ic-btn-arena {
+    position: relative !important;
+    height: 230px !important;
+    width: 100% !important;
+    background: #f1f5f9;
+    border: 2px dashed #cbd5e1;
+    border-radius: 16px;
+    margin-bottom: 16px;
+    overflow: hidden;
+    box-sizing: border-box;
+  }
+  .ic-btn-no {
+    position: absolute !important;
+    bottom: 20px !important;
+    right: 24px !important;
+    padding: 11px 26px !important;
+    background: #ef4444 !important;
+    color: #fff !important;
+    font-size: 15px !important;
+    font-weight: 700 !important;
+    border: none !important;
+    border-radius: 10px !important;
+    cursor: pointer !important;
+    transition: transform 0.1s, background 0.2s !important;
+    z-index: 10 !important;
+    font-family: inherit !important;
+  }
+  .ic-btn-no:hover {
+    background: #dc2626 !important;
+    transform: scale(1.05) !important;
+  }
+  .ic-btn-yes {
+    position: absolute !important;
+    top: 24px !important;
+    left: 24px !important;
+    padding: 11px 26px !important;
+    background: #10b981 !important;
+    color: #fff !important;
+    font-size: 15px !important;
+    font-weight: 700 !important;
+    border: none !important;
+    border-radius: 10px !important;
+    cursor: pointer !important;
+    z-index: 50 !important;
+    user-select: none !important;
+    white-space: nowrap !important;
+    font-family: inherit !important;
+    transition: top 0.15s cubic-bezier(0.18, 0.89, 0.32, 1.28), left 0.15s cubic-bezier(0.18, 0.89, 0.32, 1.28), transform 0.1s ease !important;
+  }
+  .ic-attempt-hint {
+    font-size: 14px;
+    font-weight: 700;
+    color: #64748b;
+    margin-top: 8px;
+    min-height: 22px;
+    transition: color 0.2s;
+  }
+  .ic-roast-card {
+    animation: ic-pop 0.35s ease both;
+    text-align: center;
+    padding: 16px 8px;
+  }
+  .ic-roast-emoji {
+    font-size: 48px;
+    margin-bottom: 8px;
+  }
+  .ic-roast-title {
+    font-size: 22px;
+    font-weight: 800;
+    color: #dc2626;
+    margin-bottom: 10px;
+    line-height: 1.3;
+  }
+  .ic-roast-body {
+    font-size: 14px;
+    color: #334155;
+    line-height: 1.6;
+    margin-bottom: 20px;
+  }
+
+  /* ── STATUS BAR ── */
+  .status-bar {
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    padding: 10px 18px;
+    display: flex; align-items: center; gap: 12px;
+    font-size: 12px; color: var(--muted);
+    z-index: 10;
+  }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #2ecc71; flex-shrink: 0; }
+  .status-dot.orange { background: #ef4444; }
+</style>
+</head>
+<body>
+
+<header>
+  <span class="logo-pill">Insta Conscience</span>
+  <h1>Extension Simulator</h1>
+  <p>Phase 1: Login • Phase 2: Reels Only (300ms Flood) • Interactive Break Troll → LinkedIn</p>
+</header>
+
+<div class="layout">
+
+  <!-- SIDEBAR CONTROLS -->
+  <aside class="sidebar">
+    <div class="sidebar-title">Simulation Navigation</div>
+
+    <button class="btn" id="btn-login" onclick="goLogin()">
+      <span class="icon">🔐</span>
+      <div>
+        <div class="title">Login Scene</div>
+        <div class="desc">Type in input to trigger Phase 1 popup</div>
+      </div>
+      <span class="phase-badge phase-1">Phase 1</span>
+    </button>
+
+    <div class="sep"></div>
+
+    <button class="btn" id="btn-reels" onclick="goReels()">
+      <span class="icon">🎬</span>
+      <div>
+        <div class="title">Reels Scene</div>
+        <div class="desc">Enter reels section to trigger rapid flood</div>
+      </div>
+      <span class="phase-badge phase-2">Phase 2</span>
+    </button>
+
+    <button class="btn" id="btn-start-flood" onclick="startFlood()">
+      <span class="icon">⚡</span>
+      <div>
+        <div class="title">Start Rapid Reels Flood (300ms)</div>
+        <div class="desc">28 popups flood and fill screen in ~8s</div>
+      </div>
+    </button>
+
+    <button class="btn" id="btn-trigger-form" onclick="triggerJobFormDirectly()">
+      <span class="icon">💼</span>
+      <div>
+        <div class="title">Open Job Form Directly</div>
+        <div class="desc">Test application form & flow</div>
+      </div>
+    </button>
+
+    <button class="btn" id="btn-trigger-break" onclick="triggerBreakDirectly()" style="border-color: rgba(16, 185, 129, 0.4);">
+      <span class="icon">🏃</span>
+      <div>
+        <div class="title" style="color: #34d399;">Test Runaway "Yes" Troll Directly</div>
+        <div class="desc">Instantly test runaway Yes button & roast</div>
+      </div>
+    </button>
+
+    <button class="btn" id="btn-reset" onclick="resetAll()">
+      <span class="icon">↺</span>
+      <div>
+        <div class="title">Reset Everything</div>
+        <div class="desc">Clear popups & restore clean state</div>
+      </div>
+    </button>
+
+    <div class="sep"></div>
+
+    <div class="sidebar-title">Metrics</div>
+    <div class="stats-grid">
+      <div class="stat-block">
+        <div class="label">Popups Spawned</div>
+        <div class="val" id="stat-popups">0</div>
+        <div class="sub">32 to fully blanket screen</div>
+      </div>
+      <div class="stat-block">
+        <div class="label">Interval</div>
+        <div class="val" id="stat-interval">220ms</div>
+        <div class="sub">ultra rapid-fire speed</div>
+      </div>
+    </div>
+
+    <div class="info-box">
+      <strong>Updates Applied:</strong><br>
+      • <strong>Faster 300ms Interval:</strong> 28 popups rapidly cover every single part of the screen.<br>
+      • <strong>Proximity Runaway Yes Button:</strong> Darts away whenever cursor approaches within 75px.<br>
+      • <strong>Stationary No Button:</strong> Roasts user and opens LinkedIn.<br>
+      • <strong>After 5 Attempts:</strong> Roasts "Find a job first in order to enjoy life!" and re-opens form.
+    </div>
+  </aside>
+
+  <!-- MOCK INSTAGRAM SCREEN -->
+  <main class="preview-area">
+    <div class="ig-chrome">
+
+      <div class="ig-topbar">
+        Instagram
+        <span class="ig-badge-env" id="url-badge">instagram.com</span>
+      </div>
+
+      <div class="ig-body" id="ig-body">
+
+        <!-- SCENE 1: LOGIN PAGE -->
+        <div id="scene-login">
+          <div class="ig-box">
+            <div class="ig-logo">Instagram</div>
+            <div class="ig-hint">👉 Start typing in either field to trigger Phase 1 popup!</div>
+            <input class="ig-input" type="text" placeholder="Phone number, username, or email" id="input-user" oninput="onTyping()">
+            <input class="ig-input" type="password" placeholder="Password" id="input-pass" oninput="onTyping()">
+            <button class="ig-login-btn" onclick="goReels()">Log In</button>
+          </div>
+        </div>
+
+        <!-- SCENE 2: REELS -->
+        <div id="scene-reels">
+          <div class="reel-player">
+            <div class="reel-icon">▶</div>
+            <div class="reel-title">Instagram Reels Section (/reels)</div>
+            <div class="reel-sub">Insta Conscience 300ms rapid flood activates here!</div>
+          </div>
+          <div class="reel-sidebar">
+            <div class="reel-action">❤️<span>54.2K</span></div>
+            <div class="reel-action">💬<span>2.4K</span></div>
+            <div class="reel-action">✈️<span>Share</span></div>
+          </div>
+        </div>
+
+        <!-- PHASE 1 LOGIN POPUP -->
+        <div id="preview-login-popup">
+          <div class="preview-card">
+            <img src="meme.png" alt="Job Application Meme">
+            <button class="skip-btn" onclick="skipLoginPopup()">Skip ›</button>
+          </div>
+        </div>
+
+        <!-- PHASE 2 FINAL JOB FORM OVERLAY & TROLL BOX -->
+        <div id="preview-job-form-overlay"></div>
+
+      </div><!-- /ig-body -->
+
+    </div><!-- /ig-chrome -->
+
+    <div class="status-bar">
+      <div class="status-dot" id="status-dot"></div>
+      <span id="status-text">Status: Ready. Start typing on login page or navigate to Reels.</span>
+    </div>
+  </main>
+
+</div>
+
+<script>
+// ── STATE ──────────────────────────────────────────────
+let floodActive      = false;
+let popupCount       = 0;
+const POPUPS_TO_FILL = 32; // 32 popups to fully carpet and blanket the screen
+const INTERVAL_MS    = 220; // Rapid 220ms interval
+let floodTimer       = null;
+let yesAttempts      = 0;
+let isFinalForm      = false;
+
+let savedFormData = {
+  fname: '', lname: '', email: '', phone: '',
+  position: '', exp: '', linkedin: '', cover: ''
+};
+
+// 32 dense scatter coordinates covering every region, corner, edge, and center
+const SCATTER_POSITIONS = [
+  { top: '1%',   left: '1%' },
+  { top: '2%',   right: '1%' },
+  { bottom: '1%', left: '1%' },
+  { bottom: '2%', right: '1%' },
+  { top: '1%',   left: '32%' },
+  { top: '1%',   right: '32%' },
+  { bottom: '1%', left: '32%' },
+  { bottom: '1%', right: '32%' },
+  { top: '28%',  left: '1%' },
+  { top: '28%',  right: '1%' },
+  { top: '55%',  left: '1%' },
+  { top: '55%',  right: '1%' },
+  { top: '18%',  left: '16%' },
+  { top: '18%',  right: '16%' },
+  { bottom: '18%', left: '16%' },
+  { bottom: '18%', right: '16%' },
+  { top: '25%',  left: '35%' },
+  { top: '40%',  left: '25%' },
+  { top: '40%',  right: '25%' },
+  { top: '55%',  left: '35%' },
+  { top: '10%',  left: '48%' },
+  { bottom: '10%', left: '48%' },
+  { top: '35%',  left: '10%' },
+  { top: '35%',  right: '10%' },
+  { top: '48%',  left: '48%' },
+  { top: '12%',  left: '22%' },
+  { bottom: '12%', right: '22%' },
+  { top: '22%',  left: '52%' },
+  { top: '65%',  left: '20%' },
+  { top: '65%',  right: '20%' },
+  { top: '5%',   left: '60%' },
+  { bottom: '5%', right: '60%' }
+];
+
+// ── NAVIGATION ────────────────────────────────────────
+function goLogin() {
+  resetAll();
+  document.getElementById('scene-login').style.display = 'flex';
+  document.getElementById('scene-reels').style.display = 'none';
+  document.getElementById('btn-login').classList.add('active');
+  document.getElementById('btn-reels').classList.remove('active');
+  document.getElementById('url-badge').textContent = 'instagram.com (Login)';
+  setStatus('Scene: Login Page — start typing in inputs to trigger Phase 1 popup');
+}
+
+function goReels() {
+  stopFlood();
+  document.getElementById('scene-login').style.display = 'none';
+  document.getElementById('scene-reels').style.display = 'block';
+  document.getElementById('preview-login-popup').classList.remove('shown');
+  document.getElementById('btn-login').classList.remove('active');
+  document.getElementById('btn-reels').classList.add('active');
+  document.getElementById('url-badge').textContent = 'instagram.com/reels';
+  setStatus('Scene: Reels Section (/reels) — click "Start Rapid Reels Flood" to see 28 popups flood the screen!');
+}
+
+// ── PHASE 1: LOGIN ────────────────────────────────────
+function onTyping() {
+  showLoginPopup();
+}
+
+function showLoginPopup() {
+  document.getElementById('preview-login-popup').classList.add('shown');
+  document.getElementById('status-dot').classList.add('orange');
+  setStatus('Phase 1 Active: Job application meme appeared! Click "Skip ›" on bottom-left to continue.');
+}
+
+function skipLoginPopup() {
+  document.getElementById('preview-login-popup').classList.remove('shown');
+  document.getElementById('status-dot').classList.remove('orange');
+  setStatus('Login popup skipped! User can now enter credentials.');
+}
+
+// ── PHASE 2: REELS ONLY (300ms Rapid Flood) ───────────
+function startFlood() {
+  if (floodActive) return;
+  goReels();
+  floodActive = true;
+  popupCount  = 0;
+  isFinalForm = false;
+  document.getElementById('status-dot').classList.add('orange');
+  setStatus('Phase 2 Active: Spawning popups every 300ms until entire screen is filled (28 popups)!');
+  scheduleNext();
+}
+
+function scheduleNext() {
+  if (!floodActive) return;
+  floodTimer = setTimeout(() => {
+    spawnPopup();
+    if (popupCount < POPUPS_TO_FILL) {
+      scheduleNext();
+    } else {
+      setTimeout(() => {
+        triggerJobFormDirectly();
+      }, 400);
+    }
+  }, INTERVAL_MS);
+}
+
+function spawnPopup() {
+  popupCount++;
+  const pos = SCATTER_POSITIONS[(popupCount - 1) % SCATTER_POSITIONS.length];
+  document.getElementById('stat-popups').textContent = popupCount;
+
+  const container = document.getElementById('ig-body');
+  const popup = document.createElement('div');
+  popup.className = 'ic-reels-popup';
+
+  Object.assign(popup.style, {
+    top: pos.top || 'auto',
+    left: pos.left || 'auto',
+    right: pos.right || 'auto',
+    bottom: pos.bottom || 'auto',
+    zIndex: String(10 + popupCount)
+  });
+
+  const img = document.createElement('img');
+  img.src = 'meme2.png';
+  img.alt = 'Still scrolling?';
+  popup.appendChild(img);
+
+  const closeBtn = document.createElement('button');
+  closeBtn.className = 'ic-reels-close';
+  closeBtn.textContent = '✕';
+  closeBtn.onclick = () => popup.remove();
+  popup.appendChild(closeBtn);
+
+  container.appendChild(popup);
+  setStatus(`Phase 2: Spawned popup #${popupCount}/32 in Reels (220ms rate)!`);
+}
+
+// ── JOB APPLICATION FORM & TROLL INTERACTION ──────────
+function triggerJobFormDirectly() {
+  const overlay = document.getElementById('preview-job-form-overlay');
+  overlay.classList.add('shown');
+  renderForm();
+  setStatus('💼 Form Active: Screen fully filled! Fill out the job application.');
+}
+
+function triggerBreakDirectly() {
+  const overlay = document.getElementById('preview-job-form-overlay');
+  overlay.classList.add('shown');
+  showBreakQuestion();
+  setStatus('🏃 Test Troll Active: Try hovering or clicking the Yes button!');
+}
+
+function renderForm() {
+  const overlay = document.getElementById('preview-job-form-overlay');
+  overlay.innerHTML = `
+    <div id="preview-job-form-card">
+      <h2>📋 Job Application</h2>
+      <p class="ic-subtitle">${isFinalForm ? "Final Step: Ready to apply directly on LinkedIn Jobs!" : "Screen is completely full! Since you have so much time for reels, apply for a job."}</p>
+
+      <form id="preview-actual-form">
+        <div class="ic-row">
+          <div class="ic-field">
+            <label>First Name *</label>
+            <input type="text" id="form-fname" placeholder="John" value="${savedFormData.fname}" required>
+          </div>
+          <div class="ic-field">
+            <label>Last Name *</label>
+            <input type="text" id="form-lname" placeholder="Doe" value="${savedFormData.lname}" required>
+          </div>
+        </div>
+
+        <div class="ic-field">
+          <label>Email Address *</label>
+          <input type="email" id="form-email" placeholder="john.doe@example.com" value="${savedFormData.email}" required>
+        </div>
+
+        <div class="ic-field">
+          <label>Phone Number</label>
+          <input type="tel" id="form-phone" placeholder="+91 98765 43210" value="${savedFormData.phone}">
+        </div>
+
+        <div class="ic-field">
+          <label>Position Applying For *</label>
+          <select id="form-position" required>
+            <option value="">— Select a Role —</option>
+            <option ${savedFormData.position === 'Software Engineer' ? 'selected' : ''}>Software Engineer</option>
+            <option ${savedFormData.position === 'Product Manager' ? 'selected' : ''}>Product Manager</option>
+            <option ${savedFormData.position === 'UI/UX Designer' ? 'selected' : ''}>UI/UX Designer</option>
+            <option ${savedFormData.position === 'Data Analyst' ? 'selected' : ''}>Data Analyst</option>
+            <option ${savedFormData.position === 'Marketing Specialist' ? 'selected' : ''}>Marketing Specialist</option>
+            <option ${savedFormData.position === 'Business Development' ? 'selected' : ''}>Business Development</option>
+            <option ${savedFormData.position === 'Content Creator' ? 'selected' : ''}>Content Creator</option>
+            <option ${savedFormData.position === 'Other' ? 'selected' : ''}>Other</option>
+          </select>
+        </div>
+
+        <div class="ic-field">
+          <label>Years of Experience</label>
+          <select id="form-exp">
+            <option value="">— Select —</option>
+            <option ${savedFormData.exp === 'Fresher (0–1 yr)' ? 'selected' : ''}>Fresher (0–1 yr)</option>
+            <option ${savedFormData.exp === '1–3 years' ? 'selected' : ''}>1–3 years</option>
+            <option ${savedFormData.exp === '3–5 years' ? 'selected' : ''}>3–5 years</option>
+            <option ${savedFormData.exp === '5–10 years' ? 'selected' : ''}>5–10 years</option>
+            <option ${savedFormData.exp === '10+ years' ? 'selected' : ''}>10+ years</option>
+          </select>
+        </div>
+
+        <div class="ic-field">
+          <label>LinkedIn Profile URL</label>
+          <input type="url" id="form-linkedin" placeholder="https://linkedin.com/in/yourname" value="${savedFormData.linkedin}">
+        </div>
+
+        <div class="ic-field">
+          <label>Why should we hire you?</label>
+          <textarea id="form-cover" placeholder="Tell us why you are ready to stop scrolling and start working...">${savedFormData.cover}</textarea>
+        </div>
+
+        <button type="submit" class="ic-submit-btn" id="form-submit-btn">
+          ${isFinalForm ? "🚀 Submit Application & Open LinkedIn Jobs →" : "Submit Application →"}
+        </button>
+        <p class="ic-footer">Your data is safe. A friendly nudge to level up! 😄</p>
+      </form>
+    </div>
+  `;
+
+  document.getElementById('preview-actual-form').addEventListener('submit', handleFormSubmit);
+}
+
+function handleFormSubmit(e) {
+  e.preventDefault();
+
+  savedFormData.fname    = document.getElementById('form-fname').value.trim();
+  savedFormData.lname    = document.getElementById('form-lname').value.trim();
+  savedFormData.email    = document.getElementById('form-email').value.trim();
+  savedFormData.phone    = document.getElementById('form-phone').value.trim();
+  savedFormData.position = document.getElementById('form-position').value;
+  savedFormData.exp      = document.getElementById('form-exp').value;
+  savedFormData.linkedin = document.getElementById('form-linkedin').value.trim();
+  savedFormData.cover    = document.getElementById('form-cover').value.trim();
+
+  const btn = document.getElementById('form-submit-btn');
+
+  if (!savedFormData.fname || !savedFormData.lname || !savedFormData.email || !savedFormData.position) {
+    btn.textContent = '⚠️ Please fill all required fields!';
+    btn.style.background = '#e74c3c';
+    setTimeout(() => {
+      btn.textContent = isFinalForm ? '🚀 Submit Application & Open LinkedIn Jobs →' : 'Submit Application →';
+      btn.style.background = '#0a66c2';
+    }, 2000);
+    return;
+  }
+
+  if (isFinalForm) {
+    btn.textContent = '✅ Submitting... Opening LinkedIn Jobs!';
+    btn.style.background = '#10b981';
+    setTimeout(() => {
+      window.open('https://www.linkedin.com/jobs/', '_blank');
+    }, 600);
+    return;
+  }
+
+  // First time: show the break question
+  showBreakQuestion();
+}
+
+function showBreakQuestion() {
+  const overlay = document.getElementById('preview-job-form-overlay');
+  yesAttempts = 0;
+  let lastAttemptTime = 0;
+
+  overlay.innerHTML = `
+    <div id="preview-job-form-card" class="ic-question-box">
+      <div class="ic-question-title">Wait a second... 🤔</div>
+      <div class="ic-question-text">
+        Do you just want a break? Is THAT the reason why you started scrolling reels?
+      </div>
+
+      <div class="ic-btn-arena" id="preview-btn-arena">
+        <button type="button" class="ic-btn-yes" id="preview-btn-yes">Yes, I need a break 😴</button>
+        <button type="button" class="ic-btn-no" id="preview-btn-no">No 😤</button>
+      </div>
+
+      <div class="ic-attempt-hint" id="preview-hint">Try clicking your answer...</div>
+    </div>
+  `;
+
+  const yesBtn = document.getElementById('preview-btn-yes');
+  const noBtn  = document.getElementById('preview-btn-no');
+  const arena  = document.getElementById('preview-btn-arena');
+  const hint   = document.getElementById('preview-hint');
+
+  // Enforce absolute positioning inline
+  yesBtn.style.setProperty('position', 'absolute', 'important');
+  yesBtn.style.setProperty('top', '24px', 'important');
+  yesBtn.style.setProperty('left', '24px', 'important');
+
+  // Strategic positions spread across the arena (avoiding bottom-right corner where "No" button is)
+  function getFurthestSpot(cursorX, cursorY) {
+    const arenaRect = arena.getBoundingClientRect();
+    const btnW = yesBtn.offsetWidth || 180;
+    const btnH = yesBtn.offsetHeight || 44;
+    const pad = 16;
+    const maxX = Math.max(pad, arena.clientWidth - btnW - pad);
+    const maxY = Math.max(pad, arena.clientHeight - btnH - pad);
+
+    const candidates = [
+      { x: pad, y: pad },                                         // Top-left
+      { x: maxX, y: pad },                                        // Top-right
+      { x: pad, y: maxY },                                        // Bottom-left
+      { x: Math.floor(maxX * 0.5), y: pad },                      // Top-center
+      { x: pad, y: Math.floor(maxY * 0.5) },                      // Middle-left
+      { x: Math.floor(maxX * 0.65), y: Math.floor(maxY * 0.35) }, // Center
+      { x: Math.floor(maxX * 0.3), y: maxY }                      // Bottom-center-left
+    ];
+
+    let bestSpot = candidates[0];
+    let maxDist = -1;
+
+    for (const spot of candidates) {
+      const spotCenterX = arenaRect.left + spot.x + btnW / 2;
+      const spotCenterY = arenaRect.top  + spot.y + btnH / 2;
+      const dist = Math.hypot(cursorX - spotCenterX, cursorY - spotCenterY);
+      if (dist > maxDist) {
+        maxDist = dist;
+        bestSpot = spot;
+      }
+    }
+
+    const jitterX = Math.floor((Math.random() - 0.5) * 16);
+    const jitterY = Math.floor((Math.random() - 0.5) * 16);
+    return {
+      x: Math.max(pad, Math.min(maxX, bestSpot.x + jitterX)),
+      y: Math.max(pad, Math.min(maxY, bestSpot.y + jitterY))
+    };
+  }
+
+  function triggerDodge(cursorX, cursorY, force = false) {
+    if (yesAttempts >= 5) return;
+
+    const rect = yesBtn.getBoundingClientRect();
+    // Distance from cursor to nearest point of button bounding box
+    const dx = Math.max(rect.left - cursorX, 0, cursorX - rect.right);
+    const dy = Math.max(rect.top - cursorY, 0, cursorY - rect.bottom);
+    const dist = Math.hypot(dx, dy);
+
+    // If within 90px of button border or forced
+    if (dist < 90 || force) {
+      const now = Date.now();
+      if (now - lastAttemptTime > 280) {
+        yesAttempts++;
+        lastAttemptTime = now;
+      }
+
+      if (yesAttempts < 5) {
+        const spot = getFurthestSpot(cursorX, cursorY);
+        yesBtn.style.setProperty('position', 'absolute', 'important');
+        yesBtn.style.setProperty('left', `${spot.x}px`, 'important');
+        yesBtn.style.setProperty('top', `${spot.y}px`, 'important');
+        yesBtn.style.setProperty('transition', 'top 0.15s cubic-bezier(0.18, 0.89, 0.32, 1.28), left 0.15s cubic-bezier(0.18, 0.89, 0.32, 1.28)', 'important');
+
+        // Quick playful scale bounce
+        yesBtn.style.transform = 'scale(1.1)';
+        setTimeout(() => { if (yesBtn) yesBtn.style.transform = 'scale(1)'; }, 150);
+
+        const msgs = [
+          "Nice try! 😂 Can't take a break yet! (Attempt 1/5)",
+          "Nope! Too slow! 🏃💨 (Attempt 2/5)",
+          "Still trying?! Work first, break later! 💀 (Attempt 3/5)",
+          "Almost there... try one more time! 😈 (Attempt 4/5)"
+        ];
+        if (hint) {
+          hint.textContent = msgs[Math.min(yesAttempts - 1, msgs.length - 1)];
+          hint.style.color = '#ef4444';
+        }
+      } else {
+        showFindJobRoast();
+      }
+    }
+  }
+
+  // Proximity detection across the arena and modal
+  arena.addEventListener('mousemove', (e) => {
+    triggerDodge(e.clientX, e.clientY);
+  });
+
+  // Direct events on the button
+  ['mouseenter', 'mouseover', 'pointerenter', 'pointerover', 'pointerdown', 'touchstart', 'click'].forEach(evt => {
+    yesBtn.addEventListener(evt, (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const rect = yesBtn.getBoundingClientRect();
+      const cx = e.clientX || (rect.left + rect.width / 2);
+      const cy = e.clientY || (rect.top + rect.height / 2);
+      triggerDodge(cx, cy, true);
+    }, { passive: false });
+  });
+
+  noBtn.addEventListener('click', () => {
+    showNoRoast();
+  });
+}
+
+function showNoRoast() {
+  const overlay = document.getElementById('preview-job-form-overlay');
+  overlay.innerHTML = `
+    <div id="preview-job-form-card" class="ic-roast-card">
+      <div class="ic-roast-emoji">💀🤡💼</div>
+      <div class="ic-roast-title">THEN WHY THE HELL ARE YOU SCROLLING REELS?!</div>
+      <div class="ic-roast-body">
+        Bro doesn't even need a break and is STILL doomscrolling! 😭<br>
+        You have zero excuses left. Go find a job right now! 💼🏃‍♂️💨
+      </div>
+      <button class="ic-submit-btn" id="preview-roast-linkedin-btn">
+        Fine, Go Find a Job on LinkedIn →
+      </button>
+    </div>
+  `;
+
+  document.getElementById('preview-roast-linkedin-btn').addEventListener('click', () => {
+    window.open('https://www.linkedin.com/jobs/', '_blank');
+  });
+}
+
+function showFindJobRoast() {
+  const overlay = document.getElementById('preview-job-form-overlay');
+  overlay.innerHTML = `
+    <div id="preview-job-form-card" class="ic-roast-card">
+      <div class="ic-roast-emoji">🏖️💼💀</div>
+      <div class="ic-roast-title">FIND A JOB FIRST IN ORDER TO ENJOY LIFE!</div>
+      <div class="ic-roast-body">
+        You can't take a break from having no job! 😂💀<br>
+        Earn the vacation first! Fill out your application and apply! 🎯
+      </div>
+      <button class="ic-submit-btn" id="preview-back-to-form-btn">
+        Back to Job Application (Ready to Apply) →
+      </button>
+    </div>
+  `;
+
+  document.getElementById('preview-back-to-form-btn').addEventListener('click', () => {
+    isFinalForm = true;
+    renderForm();
+  });
+
+  setTimeout(() => {
+    if (document.getElementById('preview-back-to-form-btn')) {
+      isFinalForm = true;
+      renderForm();
+    }
+  }, 3200);
+}
+
+// ── RESET ─────────────────────────────────────────────
+function stopFlood() {
+  floodActive = false;
+  if (floodTimer) { clearTimeout(floodTimer); floodTimer = null; }
+}
+
+function resetAll() {
+  stopFlood();
+  popupCount = 0;
+  yesAttempts = 0;
+  isFinalForm = false;
+  document.getElementById('stat-popups').textContent = '0';
+  document.querySelectorAll('.ic-reels-popup').forEach(el => el.remove());
+  document.getElementById('preview-login-popup').classList.remove('shown');
+  document.getElementById('preview-job-form-overlay').classList.remove('shown');
+  document.getElementById('status-dot').classList.remove('orange');
+
+  document.getElementById('input-user').value = '';
+  document.getElementById('input-pass').value = '';
+
+  setStatus('Simulator reset to initial state.');
+}
+
+function setStatus(msg) {
+  document.getElementById('status-text').textContent = msg;
+}
+
+// Start in Login scene
+goLogin();
+</script>
+</body>
+</html>
